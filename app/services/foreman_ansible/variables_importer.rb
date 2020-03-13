@@ -62,24 +62,23 @@ module ForemanAnsible
       changes = {}.with_indifferent_access
       persisted, changes[:new] = imported.partition { |var| var.id.present? }
       changed, _old = persisted.partition(&:changed?)
-      _overriden, changes[:update] = changed.partition(&:override?)
+      changes[:override], changes[:update] = changed.partition(&:override?)
       changes[:obsolete] = AnsibleVariable.where.not(:id => persisted.pluck(:id), :imported => false)
       changes
     end
 
-    def finish_import(new, obsolete, update)
-      results = { :added => [], :obsolete => [], :updated => [] }
+    def finish_import(new, obsolete, update, override)
+      results = { :added => [], :obsolete => [], :updated => [], :overridden => [] }
       results[:added] = create_new_variables(new) if new.present?
       results[:obsolete] = delete_old_variables(obsolete) if obsolete.present?
       results[:updated] = update_variables(update) if update.present?
+      results[:overridden] = override_variables(override) if override.present?
       results
     end
 
     def create_new_variables(variables)
       iterate_over_variables(variables) do |role, memo, attrs|
-        variable = AnsibleVariable.new(
-          JSON.parse(attrs)['ansible_variable']
-        )
+        variable = AnsibleVariable.new(attrs)
         variable.ansible_role = ::AnsibleRole.find_by(:name => role)
         variable.save
         memo << variable
@@ -88,18 +87,19 @@ module ForemanAnsible
 
     def update_variables(variables)
       iterate_over_variables(variables) do |_role, memo, attrs|
-        attributes = JSON.parse(attrs)['ansible_variable']
-        var = AnsibleVariable.find attributes['id']
-        var.update(attributes)
+        var = AnsibleVariable.find(attrs['id'])
+        var.update(attrs)
         memo << var
       end
     end
 
+    def override_variables(variables)
+      update_variables(variables).each { |var| var.update(:override => false) }
+    end
+
     def delete_old_variables(variables)
       iterate_over_variables(variables) do |_role, memo, attrs|
-        variable = AnsibleVariable.find(
-          JSON.parse(attrs)['ansible_variable']['id']
-        )
+        variable = AnsibleVariable.find(attrs['id'])
         memo << variable.key
         variable.destroy
       end
@@ -121,10 +121,10 @@ module ForemanAnsible
 
     def iterate_over_variables(variables)
       variables.reduce([]) do |memo, (role, vars)|
-        vars.map do |_key, attrs|
-          yield role, memo, attrs if block_given?
-          memo
+        vars.each do |_key, attrs|
+          yield role, memo,  JSON.parse(attrs)['ansible_variable'] if block_given?
         end
+        memo
       end
     end
   end

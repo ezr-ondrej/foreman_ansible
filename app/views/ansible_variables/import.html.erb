@@ -23,9 +23,9 @@
         </th>
         <th><%= _("Name") %></th>
         <th><%= _("Ansible role") %></th>
+        <th><%= _("Operation") %></th>
         <th class="col-md-2"><%= _("Hosts count") %></th>
         <th class="col-md-2"><%= _("Hostgroups count") %></th>
-        <th><%= _("Operation") %></th>
       </tr>
     </thead>
     <tbody>
@@ -39,11 +39,11 @@
               <%= link_to_function("#{variable}", "toggleCheckboxesBySelector('.variable_select_boxes_variable_#{variable}')", :title => _("Check/Uncheck all %s changes") % variable) %>
             </td>
             <td><%= variable.ansible_role %></td>
-            <td><%= variable.ansible_role.hosts.count %></td>
-            <td><%= variable.ansible_role.hostgroups.count %></td>
             <td>
               <%= { "new" => _("Add"), "obsolete" => _("Remove"), "update" => _("Update") }[kind] %>
             </td>
+            <td><%= variable.ansible_role.hosts.count %></td>
+            <td><%= variable.ansible_role.hostgroups.count %></td>
           </tr>
         <% end %>
       <% end %>

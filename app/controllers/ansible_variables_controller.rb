@@ -45,11 +45,12 @@ class AnsibleVariablesController < ::LookupKeysController
   end
 
   def confirm_import
-    results = @importer.finish_import(new_vars, old_vars, updated_vars)
+    results = @importer.finish_import(new_vars, old_vars, updated_vars, overridden_vars)
     success _(
       "Import of variables successfully finished.\n"\
       "Added: #{results[:added].count} \n "\
       "Removed: #{results[:obsolete].count} \n"\
+      "Overridden: #{results[:overridden].count} \n" \
       "Updated: #{results[:updated].count}"
     )
     redirect_to ansible_variables_path
@@ -77,6 +78,10 @@ class AnsibleVariablesController < ::LookupKeysController
 
   def updated_vars
     fetch_vars :update
+  end
+
+  def overridden_vars
+    fetch_vars :override
   end
 
   def fetch_vars(key)
