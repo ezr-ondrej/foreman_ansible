@@ -80,12 +80,20 @@ class Setting
                'with Ansible inventory'),
             'Ansible - Ansible Inventory',
             N_('Default Ansible inventory report template')
+          ),
+          set(
+            'foreman_ansible_proxy_batch_size',
+            N_('Number of tasks which should be sent to the smart proxy in one request, '\
+              'if foreman_tasks_proxy_batch_trigger is enabled. '\
+              'If set override foreman_tasks_proxy_batch_size setting for Ansible jobs.'),
+            nil,
+            N_('Proxy tasks batch size for Ansible')
           )
         ]
       end
 
       def load_defaults
-        Setting::BLANK_ATTRS.push('ansible_ssh_private_key_file')
+        Setting::BLANK_ATTRS.push('ansible_ssh_private_key_file').push('foreman_ansible_proxy_batch_size')
         super
       end
 
